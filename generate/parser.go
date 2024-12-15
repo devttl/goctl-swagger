@@ -30,6 +30,7 @@ const (
 	optionSeparator = "|"
 	equalToken      = "="
 	atRespDoc       = "@respdoc-"
+	commonResponseName = "Response"
 )
 
 func parseRangeOption(option string) (float64, float64, bool) {
@@ -412,6 +413,25 @@ func renderStruct(member spec.Member) swaggerParameterObject {
 }
 
 func renderReplyAsDefinition(d swaggerDefinitionsObject, m messageMap, p []spec.Type, refs refMap) {
+	// 定义通用响应结构
+	commonResponse := swaggerSchemaObject{
+		schemaCore: schemaCore{
+			Type: "object",
+		},
+		Properties: &swaggerSchemaObjectProperties{
+			{Key: "code", Value: swaggerSchemaObject{schemaCore: schemaCore{Type: "integer", Format: "int64"}}},
+			{Key: "msg", Value: swaggerSchemaObject{schemaCore: schemaCore{Type: "string"}}},
+			{Key: "data", Value: swaggerSchemaObject{
+				schemaCore: schemaCore{
+					Type: "object",
+				},
+			}},
+		},
+		Required: []string{"code", "msg"},
+	}
+	d[commonResponseName] = commonResponse
+
+	// 处理其他定义
 	for _, i2 := range p {
 		schema := swaggerSchemaObject{
 			schemaCore: schemaCore{
@@ -419,7 +439,6 @@ func renderReplyAsDefinition(d swaggerDefinitionsObject, m messageMap, p []spec.
 			},
 		}
 		defineStruct, _ := i2.(spec.DefineStruct)
-
 		schema.Title = defineStruct.Name()
 
 		for _, member := range defineStruct.Members {

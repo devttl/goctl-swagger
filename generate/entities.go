@@ -194,6 +194,8 @@ type swaggerResponsesObject map[string]swaggerResponseObject
 type swaggerResponseObject struct {
 	Description string              `json:"description"`
 	Schema      swaggerSchemaObject `json:"schema"`
+	Headers     map[string]swaggerHeaderObject `json:"headers,omitempty"`
+	Examples    map[string]interface{}         `json:"examples,omitempty"`
 }
 
 type keyVal struct {
@@ -269,3 +271,18 @@ type enumMap map[string]*descriptor.Enum
 
 // Internal type to store used references.
 type refMap map[string]struct{}
+
+// standardResponseObject 定义统一响应格式
+type standardResponseObject struct {
+	Code    int         `json:"code"`              // 响应状态码
+	Message string      `json:"message"`           // 响应信息
+	Data    interface{} `json:"data,omitempty"`    // 响应数据
+}
+
+// swaggerHeaderObject 定义响应头
+type swaggerHeaderObject struct {
+	Description string              `json:"description,omitempty"`
+	Type        string              `json:"type"`
+	Format      string              `json:"format,omitempty"`
+	Items       *swaggerItemsObject `json:"items,omitempty"`
+}
