@@ -92,10 +92,9 @@ GOPROXY=https://goproxy.cn/,direct go install github.com/devttl/goctl-swagger@la
     goctl api plugin -plugin goctl-swagger='swagger -filename user.json -pack Response' -api user.api -dir .
     ```
 
-- 使用 -response指定相应结构
-
-  ```bash
-goctl api plugin -plugin goctl-swagger='swagger -filename user.json -pack Response -response "[{\"name\":\"trace_id\",\"type\":\"string\",\"description\":\"链路追踪id\"},{\"name\":\"code\",\"type\":\"integer\",\"description\":\"状态码\"},{\"name\":\"msg\",\"type\":\"string\",\"description\":\"消息\"},{\"name\":\"data\",\"type\":\"object\",\"description\":\"数据\",\"is_data\":true}]";' -api user.api -dir .
+* 使用 -response指定相应结构
+    ```bash
+  goctl api plugin -plugin goctl-swagger='swagger -filename user.json -pack Response -response "[{\"name\":\"trace_id\",\"type\":\"string\",\"description\":\"链路追踪id\"},{\"name\":\"code\",\"type\":\"integer\",\"description\":\"状态码\"},{\"name\":\"msg\",\"type\":\"string\",\"description\":\"消息\"},{\"name\":\"data\",\"type\":\"object\",\"description\":\"数据\",\"is_data\":true}]";' -api user.api -dir .
     ```
 
 * 指定Host，basePath，schemes [api-host-and-base-path](https://swagger.io/docs/specification/2-0/api-host-and-base-path/)
