@@ -4,13 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"os"
 
 	"github.com/zeromicro/go-zero/tools/goctl/plugin"
 )
 
-func Do(filename string, host string, basePath string, schemes string, in *plugin.Plugin) error {
-	swagger, err := applyGenerate(in, host, basePath, schemes)
+func Do(filename, host, basePath, schemes, pack, response string, in *plugin.Plugin) error {
+	swagger, err := applyGenerate(in, host, basePath, schemes, pack, response)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -24,7 +24,7 @@ func Do(filename string, host string, basePath string, schemes string, in *plugi
 
 	output := in.Dir + "/" + filename
 
-	err = ioutil.WriteFile(output, formatted.Bytes(), 0666)
+	err = os.WriteFile(output, formatted.Bytes(), 0o666)
 	if err != nil {
 		fmt.Println(err)
 	}

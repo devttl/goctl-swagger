@@ -239,21 +239,22 @@ type swaggerSchemaObject struct {
 
 	ExternalDocs *swaggerExternalDocumentationObject `json:"externalDocs,omitempty"`
 
-	ReadOnly         bool     `json:"readOnly,omitempty"`
-	MultipleOf       float64  `json:"multipleOf,omitempty"`
-	Maximum          float64  `json:"maximum,omitempty"`
-	ExclusiveMaximum bool     `json:"exclusiveMaximum,omitempty"`
-	Minimum          float64  `json:"minimum,omitempty"`
-	ExclusiveMinimum bool     `json:"exclusiveMinimum,omitempty"`
-	MaxLength        uint64   `json:"maxLength,omitempty"`
-	MinLength        uint64   `json:"minLength,omitempty"`
-	Pattern          string   `json:"pattern,omitempty"`
-	MaxItems         uint64   `json:"maxItems,omitempty"`
-	MinItems         uint64   `json:"minItems,omitempty"`
-	UniqueItems      bool     `json:"uniqueItems,omitempty"`
-	MaxProperties    uint64   `json:"maxProperties,omitempty"`
-	MinProperties    uint64   `json:"minProperties,omitempty"`
-	Required         []string `json:"required,omitempty"`
+	ReadOnly         bool                  `json:"readOnly,omitempty"`
+	MultipleOf       float64               `json:"multipleOf,omitempty"`
+	Maximum          float64               `json:"maximum,omitempty"`
+	ExclusiveMaximum bool                  `json:"exclusiveMaximum,omitempty"`
+	Minimum          float64               `json:"minimum,omitempty"`
+	ExclusiveMinimum bool                  `json:"exclusiveMinimum,omitempty"`
+	MaxLength        uint64                `json:"maxLength,omitempty"`
+	MinLength        uint64                `json:"minLength,omitempty"`
+	Pattern          string                `json:"pattern,omitempty"`
+	MaxItems         uint64                `json:"maxItems,omitempty"`
+	MinItems         uint64                `json:"minItems,omitempty"`
+	UniqueItems      bool                  `json:"uniqueItems,omitempty"`
+	MaxProperties    uint64                `json:"maxProperties,omitempty"`
+	MinProperties    uint64                `json:"minProperties,omitempty"`
+	Required         []string              `json:"required,omitempty"`
+	AllOf            []swaggerSchemaObject `json:"allOf,omitempty"`
 }
 
 // http://swagger.io/specification/#definitionsObject
@@ -269,3 +270,11 @@ type enumMap map[string]*descriptor.Enum
 
 // Internal type to store used references.
 type refMap map[string]struct{}
+
+// responseField 响应字段
+type responseField struct {
+	Name        string `json:"name"`
+	Type        string `json:"type"`
+	Description string `json:"description"`
+	IsData      bool   `json:"is_data"`
+}

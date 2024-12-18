@@ -3,6 +3,7 @@ package generate
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -16,7 +17,10 @@ import (
 	"github.com/zeromicro/go-zero/tools/goctl/plugin"
 )
 
-var strColon = []byte(":")
+var (
+	strColon        = []byte(":")
+	defaultResponse = parseDefaultResponse()
+)
 
 const (
 	validateKey     = "validate"
@@ -30,6 +34,9 @@ const (
 	optionSeparator = "|"
 	equalToken      = "="
 	atRespDoc       = "@respdoc-"
+
+	// DefaultResponseJson default response pack json structure.
+	DefaultResponseJson = `[{"name":"trace_id","type":"string","description":"链路追踪id","example":"a1b2c3d4e5f6g7h8"},{"name":"code","type":"integer","description":"状态码","example":0},{"name":"msg","type":"string","description":"消息","example":"ok"},{"name":"data","type":"object","description":"数据","is_data":true}]`
 )
 
 func parseRangeOption(option string) (float64, float64, bool) {
@@ -55,7 +62,7 @@ func parseRangeOption(option string) (float64, float64, bool) {
 	return min, max, true
 }
 
-func applyGenerate(p *plugin.Plugin, host string, basePath string, schemes string) (*swaggerObject, error) {
+func applyGenerate(p *plugin.Plugin, host, basePath, schemes, pack, response string) (*swaggerObject, error) {
 	title, _ := strconv.Unquote(p.Api.Info.Properties["title"])
 	version, _ := strconv.Unquote(p.Api.Info.Properties["version"])
 	desc, _ := strconv.Unquote(p.Api.Info.Properties["desc"])
@@ -104,8 +111,22 @@ func applyGenerate(p *plugin.Plugin, host string, basePath string, schemes strin
 
 	// s.Security = append(s.Security, swaggerSecurityRequirementObject{"apiKey": []string{}})
 
+	dataKey := "data"
+	if pack != "" {
+		resp := defaultResponse
+		if response != "" {
+			r, dk, err := parseResponse(response)
+			if err != nil {
+				return nil, err
+			}
+			resp = r
+			dataKey = dk
+		}
+		s.Definitions[pack] = resp
+	}
+
 	requestResponseRefs := refMap{}
-	renderServiceRoutes(p.Api.Service, p.Api.Service.Groups, s.Paths, requestResponseRefs)
+	renderServiceRoutes(p.Api.Service, p.Api.Service.Groups, s.Paths, requestResponseRefs, pack, dataKey)
 	m := messageMap{}
 
 	renderReplyAsDefinition(s.Definitions, m, p.Api.Types, requestResponseRefs)
@@ -113,7 +134,7 @@ func applyGenerate(p *plugin.Plugin, host string, basePath string, schemes strin
 	return &s, nil
 }
 
-func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swaggerPathsObject, requestResponseRefs refMap) {
+func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swaggerPathsObject, requestResponseRefs refMap, pack, dataKey string) {
 	for _, group := range groups {
 		for _, route := range group.Routes {
 			path := group.GetAnnotation("prefix") + route.Path
@@ -237,6 +258,17 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 			if value := group.GetAnnotation("swtags"); len(value) > 0 {
 				tags = value
 			}
+			schema := swaggerSchemaObject{
+				schemaCore: respSchema,
+			}
+			if pack != "" {
+				schema = swaggerSchemaObject{
+					AllOf: []swaggerSchemaObject{
+						{schemaCore: schemaCore{Ref: "#/definitions/" + strings.TrimPrefix(pack, "/")}},
+						{schemaCore: schemaCore{Type: "object"}, Properties: &swaggerSchemaObjectProperties{{Key: dataKey, Value: respSchema}}},
+					},
+				}
+			}
 
 			operationObject := &swaggerOperationObject{
 				Tags:       []string{tags},
@@ -244,9 +276,7 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 				Responses: swaggerResponsesObject{
 					"200": swaggerResponseObject{
 						Description: desc,
-						Schema: swaggerSchemaObject{
-							schemaCore: respSchema,
-						},
+						Schema:      schema,
 					},
 				},
 			}
@@ -520,7 +550,7 @@ func schemaOfField(member spec.Member) swaggerSchemaObject {
 	comment = strings.Replace(comment, "//", "", -1)
 
 	switch ft := kind; ft {
-	case reflect.Invalid: //[]Struct 也有可能是 Struct
+	case reflect.Invalid: // []Struct 也有可能是 Struct
 		// []Struct
 		// map[ArrayType:map[Star:map[StringExpr:UserSearchReq] StringExpr:*UserSearchReq] StringExpr:[]*UserSearchReq]
 		refTypeName := strings.Replace(member.Type.Name(), "[", "", 1)
@@ -768,4 +798,44 @@ func parseHeader(m spec.Member, parameters []swaggerParameterObject) []swaggerPa
 		}
 	}
 	return append(parameters, sp)
+}
+
+// 解析响应参数
+func parseResponse(resp string) (swaggerSchemaObject, string, error) {
+	var fields []responseField
+	err := json.Unmarshal([]byte(resp), &fields)
+	if err != nil {
+		return swaggerSchemaObject{}, "", err
+	}
+	hasData := false
+	dataKey := ""
+	for _, field := range fields {
+		if field.Name == "" || field.Type == "" {
+			return swaggerSchemaObject{}, "", errors.New("响应字段参数错误")
+		}
+		if field.IsData {
+			hasData = true
+			dataKey = field.Name
+		}
+	}
+	if !hasData {
+		return swaggerSchemaObject{}, "", errors.New("请指定包装的数据字段")
+	}
+	properties := new(swaggerSchemaObjectProperties)
+	response := swaggerSchemaObject{schemaCore: schemaCore{Type: "object"}}
+	for _, field := range fields {
+		*properties = append(*properties,
+			keyVal{
+				Key:   field.Name,
+				Value: swaggerSchemaObject{schemaCore: schemaCore{Type: field.Type}, Description: field.Description},
+			})
+	}
+	response.Properties = properties
+	return response, dataKey, nil
+}
+
+// 默认返回值
+func parseDefaultResponse() swaggerSchemaObject {
+	response, _, _ := parseResponse(DefaultResponseJson)
+	return response
 }
