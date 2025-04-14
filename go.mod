@@ -1,4 +1,4 @@
-module github.com/devttl/goctl-swagger
+module svnet.cn/devttl/goctl-swagger
 
 go 1.21
 

@@ -5,9 +5,9 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/devttl/goctl-swagger/action"
-	"github.com/devttl/goctl-swagger/generate"
 	"github.com/urfave/cli/v2"
+	"svnet.cn/devttl/goctl-swagger/action"
+	"svnet.cn/devttl/goctl-swagger/generate"
 )
 
 var (
